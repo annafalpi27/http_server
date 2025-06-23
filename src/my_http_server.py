@@ -9,17 +9,31 @@ logger = logging.getLogger("MyHTTPServer")
 
 class MyHTTPServer():
     def __init__(self, host: str = "localhost", port: int = 4221):
+        """
+        Initializes the HTTP server.
+        Args:
+            host (str, optional): The hostname or IP address to bind the server to. Defaults to "localhost".
+            port (int, optional): The port number to listen on. Defaults to 4221.
+        """
         self.server_socket = socket.create_server((host, port), reuse_port=True) 
 
     def accept_client(self):
-        """ Accepts a client connection and initializes the client socket. """
+        """
+        Accepts a client connection and initializes the client socket. This is performed in a separate method to ensure
+        responsibilities separation good practice.
+        Returns:
+            tuple: A tuple containing the client socket object and the address of the connected client.
+        """
         client_socket, addr = self.server_socket.accept()
         logger.info(f"[+] New connection from {addr}")
-        return client_socket, addr # GOOD PRACTICE: Separation of Responsibilities
+        return client_socket, addr 
 
     def send_response(self, client_socket, status_code:int =200, headers: dict = {}, body: str = ''):
+        
         """
         Sends an HTTP response to the client.
+        Returns:
+            None
         """
         response = HTTPResponse(status_code=status_code, body=body, request_headers=headers, http_version=self.http_version)
         client_socket.send(response.build())
@@ -27,6 +41,8 @@ class MyHTTPServer():
     def manage_get_endpoints(self, client_socket, path, http_version, request_headers):
         """
         Handles GET requests for the server.
+        Returns:
+            None
         """
         self.http_version = http_version
         match (path):
@@ -49,13 +65,15 @@ class MyHTTPServer():
                         content = f.read()
                     self.send_response(client_socket=client_socket, body=content, headers=request_headers)
                 else:
-                    self.send_response(client_socket=client_socket, status_code=404, headers=request_headers)
+                    self.send_response(client_socket=client_socket, status_code=404, body = "Not found", headers=request_headers)
             case _:
-                self.send_response(client_socket=client_socket, status_code=404, headers=request_headers)
+                self.send_response(client_socket=client_socket, status_code=404,body = "Not found", headers=request_headers)
 
     def manage_post_endpoints(self, client_socket, path, http_version, request_headers, request_body):
         """
         Handles POST requests for the server.
+        Returns:
+            None
         """
         self.http_version = http_version
         match (path):
@@ -67,9 +85,26 @@ class MyHTTPServer():
                     self.send_response(client_socket=client_socket, status_code=201, body=request_body, headers=request_headers)
             
             case _:
-                self.send_response(client_socket=client_socket, status_code=404, headers=request_headers)
+                self.send_response(client_socket=client_socket, status_code=404, body = "Not found", headers=request_headers)
     
     def handle_client(self, client_socket, addr):
+        """
+        This method reads incoming data from the client socket, parses HTTP requests, and dispatches them
+        to the appropriate handler based on the HTTP method (GET or POST). It supports persistent connections
+        (keep-alive) for HTTP/1.1 and closes the connection for HTTP/1.0 or when the client requests it.
+        Args:
+            client_socket (socket.socket): The socket object representing the client connection.
+            addr (tuple): The address of the connected client.
+        Behavior:
+            - Sets a timeout for client inactivity.
+            - Receives and decodes HTTP requests from the client.
+            - Logs the request line and client address.
+            - Parses the HTTP request into method, path, version, headers, and body.
+            - Dispatches GET and POST requests to their respective handlers.
+            - Manages connection persistence based on HTTP version and 'Connection' header.
+            - Closes the connection on timeout, protocol requirements, or client request.
+        """
+        
         client_socket.settimeout(5) 
         while True:
             try:
