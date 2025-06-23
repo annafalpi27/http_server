@@ -16,7 +16,7 @@ CURL_1_1_TESTS = [
     },
     {
         "command": ["curl", "-i", "-H", "Connection: close", f"{SERVER_URL}/abcdefg"],
-        "expected_response": "HTTP/1.1 404 Not Found\nConnection: close\n\n"
+        "expected_response": "HTTP/1.1 404 Not Found\nContent-Type: text/plain\nContent-Length: 9\nConnection: close\n\nNot found"
     },
     {
         "command": ["curl", "-i", "-H", "Connection: close", f"{SERVER_URL}/echo/abc"],
@@ -28,11 +28,11 @@ CURL_1_1_TESTS = [
     },
     {
         "command": ["curl", "-i", "-H", "Connection: close", f"{SERVER_URL}/files/foo"],
-        "expected_response": "HTTP/1.1 200 OK\nContent-Type: text/plain\nContent-Length: 13\nConnection: close\n\nHello, World!"
+        "expected_response": "HTTP/1.1 200 OK\nContent-Type: text/plain\nContent-Length: 24\nConnection: close\n\nContent of the foo file!"
     },
     {
         "command": ["curl", "-i", "-H", "Connection: close", f"{SERVER_URL}/files/non_existant_file"],
-        "expected_response": "HTTP/1.1 404 Not Found\nConnection: close\n\n"
+        "expected_response": "HTTP/1.1 404 Not Found\nContent-Type: text/plain\nContent-Length: 9\nConnection: close\n\nNot found"
     },
     {
         "command": ["curl", "-i", "--data", "12345", "-H", "Connection: close", f"{SERVER_URL}/files/file_123"],
